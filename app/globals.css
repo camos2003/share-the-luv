@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@theme {
+  --color-luv-50: #fff1f2;
+  --color-luv-100: #ffe4e6;
+  --color-luv-200: #fecdd3;
+  --color-luv-300: #fda4af;
+  --color-luv-400: #fb7185;
+  --color-luv-500: #f43f5e;
+  --color-luv-600: #e11d48;
+  --color-luv-700: #be123c;
+  --color-ink: #1c1917;
+  --color-paper: #fffaf5;
+  --font-sans: ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
+}
+
+html,
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Prevent the browser from hijacking swipe gestures on the deck */
+.no-touch-pan {
+  touch-action: none;
+}
