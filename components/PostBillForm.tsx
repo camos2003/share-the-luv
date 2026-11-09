@@ -43,7 +43,7 @@ export default function PostBillForm() {
       setBusy(false);
       return;
     }
-    router.push("/swipe");
+    router.push(`/post/done?id=${encodeURIComponent(data.bill.id)}`);
   };
 
   return (
@@ -100,7 +100,7 @@ export default function PostBillForm() {
         {busy ? "Posting…" : "Post my bill"}
       </button>
       <p className="text-xs text-stone-500 text-center">
-        Next step (not built yet): upload the bill so we can verify it before it goes live.
+        Visible to swipers: your first name, city, biller, amount and story. Never your full name, address or account number.
       </p>
     </form>
   );

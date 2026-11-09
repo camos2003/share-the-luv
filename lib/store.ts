@@ -11,15 +11,18 @@ export interface Store {
   getBill(id: string): Promise<Bill | null>;
   createBill(input: NewBillInput): Promise<Bill>;
   addLuv(input: NewLuvInput): Promise<{ luv: Luv; bill: Bill }>;
+  addNotifySignup(email: string): Promise<void>;
 }
 
 // ---------- Demo (in-memory) ----------
 
 function demoStore(): Store {
   // Module-level state survives across requests in one dev server process.
-  const g = globalThis as unknown as { __luvDemo?: { bills: Bill[]; luvs: Luv[] } };
+  const g = globalThis as unknown as {
+    __luvDemo?: { bills: Bill[]; luvs: Luv[]; signups: Set<string> };
+  };
   if (!g.__luvDemo) {
-    g.__luvDemo = { bills: structuredClone(DEMO_BILLS), luvs: [] };
+    g.__luvDemo = { bills: structuredClone(DEMO_BILLS), luvs: [], signups: new Set() };
   }
   const db = g.__luvDemo;
 
@@ -66,6 +69,9 @@ function demoStore(): Store {
       if (bill.remaining_cents <= 0) bill.status = "funded";
       return { luv, bill };
     },
+    async addNotifySignup(email) {
+      db.signups.add(email);
+    },
   };
 }
 
@@ -107,6 +113,12 @@ function supabaseStore(client: SupabaseClient): Store {
       });
       if (error) throw error;
       return data as { luv: Luv; bill: Bill };
+    },
+    async addNotifySignup(email) {
+      const { error } = await client
+        .from("notify_signups")
+        .upsert({ email }, { onConflict: "email", ignoreDuplicates: true });
+      if (error) throw error;
     },
   };
 }

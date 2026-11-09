@@ -4,62 +4,82 @@ import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion, useMotionValue, useTransform, type PanInfo } from "framer-motion";
 import BillCard from "./BillCard";
 import LuvSheet from "./LuvSheet";
+import Celebration from "./Celebration";
+import EmptyDeck from "./EmptyDeck";
+import { celebrationLine } from "@/lib/celebrate";
+import { recordMyLuv } from "@/lib/myLuvs";
 import { type Bill } from "@/lib/types";
 
 const SWIPE_THRESHOLD = 110; // px
 const FLICK_VELOCITY = 600; // px/s
+const CELEBRATE_MS = 1800;
 
 export default function SwipeDeck({ initialBills }: { initialBills: Bill[] }) {
   const [bills, setBills] = useState<Bill[]>(initialBills);
+  const [passed, setPassed] = useState<Bill[]>([]); // undo stack
   const [exitDir, setExitDir] = useState<1 | -1>(1);
   const [luvTarget, setLuvTarget] = useState<Bill | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [celebrating, setCelebrating] = useState<{ line: string; amount: number } | null>(null);
 
   const top = bills[0];
   const next = bills[1];
+  const busy = !!luvTarget || !!celebrating;
 
   const pass = useCallback(() => {
+    if (busy || !top) return;
     setExitDir(-1);
+    setPassed((p) => [top, ...p]);
     setBills((b) => b.slice(1));
-  }, []);
+  }, [busy, top]);
+
+  const undo = useCallback(() => {
+    if (busy || passed.length === 0) return;
+    const [last, ...rest] = passed;
+    setPassed(rest);
+    setExitDir(-1); // re-enters from the left
+    setBills((b) => [last, ...b]);
+  }, [busy, passed]);
 
   const luv = useCallback(() => {
-    if (top) setLuvTarget(top);
-  }, [top]);
+    if (busy || !top) return;
+    setLuvTarget(top);
+  }, [busy, top]);
 
-  // Keyboard: ← pass, → luv
+  // Keyboard: ← pass, → luv, Z undo
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (luvTarget) return;
       if (e.key === "ArrowLeft") pass();
       if (e.key === "ArrowRight") luv();
+      if (e.key.toLowerCase() === "z") undo();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [pass, luv, luvTarget]);
+  }, [pass, luv, undo]);
 
-  const onLuvDone = (updated: Bill, amountCents: number) => {
+  const onLuvDone = (updated: Bill, amountCents: number, message: string | null) => {
     setLuvTarget(null);
-    setExitDir(1);
-    setBills((b) => b.slice(1));
-    setToast(`You sent ${(amountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })} to ${updated.biller} for ${updated.poster_name} 💗`);
-    setTimeout(() => setToast(null), 3500);
+    const fullyFunded = updated.remaining_cents <= 0;
+    recordMyLuv({
+      id: `${updated.id}-${Date.now()}`,
+      at: new Date().toISOString(),
+      bill_id: updated.id,
+      poster_name: updated.poster_name,
+      biller: updated.biller,
+      category: updated.category,
+      amount_cents: amountCents,
+      fully_funded: fullyFunded,
+      message,
+    });
+    setCelebrating({ line: celebrationLine(updated, fullyFunded), amount: amountCents });
+    setTimeout(() => {
+      setCelebrating(null);
+      setExitDir(1);
+      setBills((b) => b.slice(1));
+    }, CELEBRATE_MS);
   };
 
   if (!top) {
-    return (
-      <div className="text-center py-20 flex flex-col gap-3">
-        <div className="text-5xl">🎉</div>
-        <h2 className="text-xl font-bold">You&apos;ve seen every bill.</h2>
-        <p className="text-stone-600 text-sm">Check back soon, or share the app so more people post.</p>
-        <button
-          onClick={() => setBills(initialBills)}
-          className="mt-4 self-center rounded-full border-2 border-luv-200 px-5 py-2 text-sm font-semibold hover:border-luv-400"
-        >
-          Start over
-        </button>
-      </div>
-    );
+    return <EmptyDeck onRestart={() => { setBills(initialBills); setPassed([]); }} />;
   }
 
   return (
@@ -71,36 +91,37 @@ export default function SwipeDeck({ initialBills }: { initialBills: Bill[] }) {
           </div>
         )}
         <AnimatePresence initial={false} custom={exitDir}>
-          <TopCard key={top.id} bill={top} onPass={pass} onLuv={luv} exitDir={exitDir} />
+          <TopCard key={top.id} bill={top} onPass={pass} onLuv={luv} exitDir={exitDir} locked={busy} />
+        </AnimatePresence>
+        <AnimatePresence>
+          {celebrating && <Celebration line={celebrating.line} amountCents={celebrating.amount} />}
         </AnimatePresence>
       </div>
 
-      <div className="flex items-center justify-center gap-6">
-        <RoundButton label="Pass" onClick={pass} className="bg-white border-2 border-stone-200 text-stone-500 hover:border-stone-400">
+      <div className="flex items-center justify-center gap-5">
+        <RoundButton
+          label="Undo last pass"
+          onClick={undo}
+          disabled={passed.length === 0 || busy}
+          small
+          className="bg-white border-2 border-stone-200 text-stone-500 hover:border-amber-400 hover:text-amber-600 disabled:opacity-30"
+        >
+          ↩
+        </RoundButton>
+        <RoundButton label="Pass" onClick={pass} disabled={busy} className="bg-white border-2 border-stone-200 text-stone-500 hover:border-stone-400">
           ✕
         </RoundButton>
-        <RoundButton label="Send luv" onClick={luv} big className="bg-luv-600 text-white shadow-lg shadow-luv-200 hover:bg-luv-700">
+        <RoundButton label="Send luv" onClick={luv} disabled={busy} big className="bg-luv-600 text-white shadow-lg shadow-luv-200 hover:bg-luv-700">
           💗
         </RoundButton>
       </div>
-      <p className="text-center text-xs text-stone-400">Swipe or use ← → keys</p>
+      <p className="text-center text-xs text-stone-400">
+        Swipe, or use ← → keys · <kbd className="font-sans">Z</kbd> to undo a pass
+      </p>
 
       <AnimatePresence>
         {luvTarget && (
           <LuvSheet bill={luvTarget} onClose={() => setLuvTarget(null)} onDone={onLuvDone} />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ y: 40, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 40, opacity: 0 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 rounded-full bg-ink text-white text-sm px-5 py-3 shadow-xl max-w-[90vw] text-center"
-          >
-            {toast}
-          </motion.div>
         )}
       </AnimatePresence>
     </div>
@@ -112,11 +133,13 @@ function TopCard({
   onPass,
   onLuv,
   exitDir,
+  locked,
 }: {
   bill: Bill;
   onPass: () => void;
   onLuv: () => void;
   exitDir: 1 | -1;
+  locked: boolean;
 }) {
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-250, 250], [-14, 14]);
@@ -133,11 +156,13 @@ function TopCard({
     <motion.div
       className="absolute inset-0 cursor-grab active:cursor-grabbing"
       style={{ x, rotate }}
-      drag="x"
+      drag={locked ? false : "x"}
       dragElastic={0.9}
       dragConstraints={{ left: 0, right: 0 }}
       onDragEnd={onDragEnd}
       custom={exitDir}
+      initial={{ x: exitDir * -400, opacity: 0, rotate: exitDir * -10 }}
+      animate={{ x: 0, opacity: 1, rotate: 0, transition: { type: "spring", damping: 26, stiffness: 260 } }}
       variants={{
         exit: (dir: 1 | -1) => ({ x: dir * 600, opacity: 0, rotate: dir * 20, transition: { duration: 0.3 } }),
       }}
@@ -166,21 +191,26 @@ function RoundButton({
   label,
   onClick,
   big,
+  small,
+  disabled,
   className,
 }: {
   children: React.ReactNode;
   label: string;
   onClick: () => void;
   big?: boolean;
+  small?: boolean;
+  disabled?: boolean;
   className?: string;
 }) {
+  const size = big ? "w-20 h-20 text-3xl" : small ? "w-12 h-12 text-xl" : "w-16 h-16 text-2xl";
   return (
     <button
       aria-label={label}
+      title={label}
       onClick={onClick}
-      className={`rounded-full flex items-center justify-center active:scale-90 transition ${
-        big ? "w-20 h-20 text-3xl" : "w-16 h-16 text-2xl"
-      } ${className ?? ""}`}
+      disabled={disabled}
+      className={`rounded-full flex items-center justify-center active:scale-90 transition disabled:cursor-not-allowed ${size} ${className ?? ""}`}
     >
       {children}
     </button>

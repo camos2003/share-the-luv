@@ -41,6 +41,12 @@ create table if not exists public.luvs (
 
 create index if not exists luvs_bill_idx on public.luvs (bill_id);
 
+-- ---------- notify signups (empty-deck email capture) ----------
+create table if not exists public.notify_signups (
+  email       text primary key,
+  created_at  timestamptz not null default now()
+);
+
 -- ---------- atomic "luv" ----------
 -- Decrements remaining_cents, bumps luv_count, flips to 'funded' at zero.
 create or replace function public.add_luv(
@@ -84,6 +90,7 @@ $$;
 -- Tighten these once auth is added.
 alter table public.bills enable row level security;
 alter table public.luvs  enable row level security;
+alter table public.notify_signups enable row level security;
 
 drop policy if exists "public can read open verified bills" on public.bills;
 create policy "public can read open verified bills"

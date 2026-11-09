@@ -28,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="flex gap-4 text-sm font-medium">
               <Link href="/swipe" className="hover:text-luv-600">Swipe</Link>
               <Link href="/post" className="hover:text-luv-600">Post a bill</Link>
+              <Link href="/me" className="hover:text-luv-600">My luvs</Link>
             </div>
           </nav>
           {demo && (

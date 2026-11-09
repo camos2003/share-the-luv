@@ -13,7 +13,7 @@ export default function LuvSheet({
 }: {
   bill: Bill;
   onClose: () => void;
-  onDone: (updated: Bill, amountCents: number) => void;
+  onDone: (updated: Bill, amountCents: number, message: string | null) => void;
 }) {
   const [amount, setAmount] = useState<number>(Math.min(2500, bill.remaining_cents));
   const [custom, setCustom] = useState("");
@@ -43,7 +43,7 @@ export default function LuvSheet({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Could not send luv");
-      onDone(data.bill as Bill, amount);
+      onDone(data.bill as Bill, amount, message || null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
       setBusy(false);
