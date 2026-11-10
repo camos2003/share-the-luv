@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { formatMoney, type Bill } from "@/lib/types";
+import { formatMoney, PAYOUT_LABELS, type Bill } from "@/lib/types";
 
 const PRESETS = [1000, 2500, 5000]; // cents
 
@@ -70,8 +70,14 @@ export default function LuvSheet({
           <h2 className="text-xl font-bold">
             Send luv to {bill.poster_name} <span aria-hidden>💗</span>
           </h2>
-          <p className="text-sm text-stone-600">
-            Paid directly to <span className="font-semibold">{bill.biller}</span>. {formatMoney(bill.remaining_cents)} left.
+          <p className="text-sm text-stone-600">{formatMoney(bill.remaining_cents)} left on this bill.</p>
+          <p
+            className={`mt-2 rounded-lg px-3 py-2 text-xs font-medium ${
+              bill.payout === "biller" ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-900"
+            }`}
+          >
+            {bill.payout === "biller" ? "🏦 " : "👤 "}
+            {PAYOUT_LABELS[bill.payout].long(bill.poster_name, bill.biller)}
           </p>
         </div>
 
@@ -118,7 +124,7 @@ export default function LuvSheet({
           onClick={submit}
           className="rounded-full bg-luv-600 text-white py-3 font-semibold disabled:opacity-50 hover:bg-luv-700 active:scale-[0.98] transition"
         >
-          {busy ? "Sending…" : `Send ${formatMoney(amount)} to ${bill.biller}`}
+          {busy ? "Sending…" : `Send ${formatMoney(amount)} ${bill.payout === "biller" ? `to ${bill.biller}` : `to ${bill.poster_name}`}`}
         </button>
         <button onClick={onClose} className="text-sm text-stone-500 -mt-2">
           Not right now

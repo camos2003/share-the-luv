@@ -39,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </header>
         <main className="flex-1 mx-auto w-full max-w-md px-4 py-6">{children}</main>
         <footer className="text-center text-xs text-stone-500 py-6">
-          Payments go to the biller, never the person. © {new Date().getFullYear()} Share the Luv
+          Direct-to-biller by default, always labeled. © {new Date().getFullYear()} Share the Luv
         </footer>
       </body>
     </html>

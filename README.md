@@ -60,6 +60,10 @@ Everything touches data through `lib/store.ts`, so swapping or extending the bac
 6. **Trust & safety** — rate limits, duplicate detection, one open bill per person, flagging.
 7. **Nonprofit question** — talk to a lawyer about whether to run this as a 501(c)(3) (tax-deductible luvs, fewer money-transmitter headaches) or a for-profit with a fiscal sponsor.
 
+## Payout choice
+
+Posters choose where luvs go: **biller** (we pay the company — default, badged, filterable) or **bank** (their own account). Givers can filter the deck to direct-to-biller only. Bank payout is the higher-risk path: it needs KYC on the poster and a money-transmitter conversation with a lawyer before real money moves.
+
 ## Why it's not a "sugar" app
 
 The money never touches the poster. That single design choice keeps it out of adult-adjacent payment-processor categories, out of FOSTA-SESTA exposure, and in the app stores.

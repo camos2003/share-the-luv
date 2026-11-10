@@ -9,13 +9,17 @@ export type BillCategory =
 
 export type BillStatus = "pending_verification" | "open" | "funded" | "paid";
 
+/** Where luvs actually go. "biller" = we pay the company directly (default, strongest trust signal). */
+export type Payout = "biller" | "bank";
+
 export interface Bill {
   id: string;
   created_at: string;
   poster_name: string; // first name only, by design
   city: string;
   state: string;
-  biller: string; // who actually gets paid, e.g. "Xcel Energy"
+  biller: string; // the company the bill is from, e.g. "Xcel Energy"
+  payout: Payout; // biller = paid to the company; bank = paid to the poster's bank account
   category: BillCategory;
   amount_cents: number;
   remaining_cents: number;
@@ -41,6 +45,7 @@ export interface NewBillInput {
   city: string;
   state: string;
   biller: string;
+  payout: Payout;
   category: BillCategory;
   amount_cents: number;
   due_date: string | null;
@@ -81,3 +86,14 @@ export function formatMoney(cents: number): string {
     maximumFractionDigits: cents % 100 === 0 ? 0 : 2,
   });
 }
+
+export const PAYOUT_LABELS: Record<Payout, { short: string; long: (name: string, biller: string) => string }> = {
+  biller: {
+    short: "Paid to biller",
+    long: (_name, biller) => `Paid directly to ${biller}. Never touches a personal account.`,
+  },
+  bank: {
+    short: "Paid to poster",
+    long: (name, biller) => `Sent to ${name}'s bank account; ${name} pays ${biller}.`,
+  },
+};

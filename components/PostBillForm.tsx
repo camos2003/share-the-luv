@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CATEGORY_EMOJI, CATEGORY_LABELS, type BillCategory } from "@/lib/types";
+import { CATEGORY_EMOJI, CATEGORY_LABELS, type BillCategory, type Payout } from "@/lib/types";
 
 const CATEGORIES = Object.keys(CATEGORY_LABELS) as BillCategory[];
 
@@ -14,6 +14,7 @@ export default function PostBillForm() {
     state: "",
     biller: "",
     category: "utility" as BillCategory,
+    payout: "biller" as Payout,
     amount: "",
     due_date: "",
     story: "",
@@ -61,9 +62,28 @@ export default function PostBillForm() {
         <Field label="State"><input required maxLength={2} placeholder="MN" value={form.state} onChange={set("state")} className={inputCls + " uppercase"} /></Field>
       </div>
 
-      <Field label="Who gets paid? (the biller)">
+      <Field label="Who is the bill from?">
         <input required placeholder="e.g. Xcel Energy" value={form.biller} onChange={set("biller")} className={inputCls} />
       </Field>
+
+      <fieldset className="flex flex-col gap-2">
+        <legend className="text-sm font-medium text-stone-700 mb-1">Where should the money go?</legend>
+        <PayoutOption
+          value="biller"
+          current={form.payout}
+          onChange={(v) => setForm((f) => ({ ...f, payout: v }))}
+          title={`Straight to ${form.biller.trim() || "the biller"}`}
+          badge="Recommended"
+          text="We pay the company on your behalf. Gets funded faster — swipers trust it more and can filter for it."
+        />
+        <PayoutOption
+          value="bank"
+          current={form.payout}
+          onChange={(v) => setForm((f) => ({ ...f, payout: v }))}
+          title="To my bank account"
+          text="You pay the bill yourself. Needs extra identity verification and is labeled for swipers."
+        />
+      </fieldset>
 
       <div className="grid grid-cols-2 gap-3">
         <Field label="Amount owed">
@@ -108,6 +128,40 @@ export default function PostBillForm() {
 
 const inputCls =
   "w-full rounded-xl border border-stone-200 px-3 py-2 outline-none focus:border-luv-400 bg-white";
+
+function PayoutOption({
+  value,
+  current,
+  onChange,
+  title,
+  text,
+  badge,
+}: {
+  value: Payout;
+  current: Payout;
+  onChange: (v: Payout) => void;
+  title: string;
+  text: string;
+  badge?: string;
+}) {
+  const active = current === value;
+  return (
+    <label
+      className={`flex gap-3 items-start rounded-xl border-2 p-3 cursor-pointer transition ${
+        active ? "border-luv-500 bg-luv-50" : "border-stone-200 hover:border-luv-300"
+      }`}
+    >
+      <input type="radio" name="payout" value={value} checked={active} onChange={() => onChange(value)} className="mt-1 accent-luv-600" />
+      <span className="flex flex-col gap-0.5 text-sm">
+        <span className="font-semibold flex items-center gap-2">
+          {title}
+          {badge && <span className="text-[10px] uppercase tracking-wide rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5">{badge}</span>}
+        </span>
+        <span className="text-stone-600 font-normal">{text}</span>
+      </span>
+    </label>
+  );
+}
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

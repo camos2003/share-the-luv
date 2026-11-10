@@ -6,7 +6,7 @@ export default function PostPage() {
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight">Post a bill</h1>
         <p className="text-sm text-stone-600">
-          We pay the biller directly, so tell us who they are. First name only — nobody sees your full name.
+          Tell us about the bill and where the money should go. First name only — nobody sees your full name.
         </p>
       </div>
       <PostBillForm />

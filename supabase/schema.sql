@@ -11,7 +11,9 @@ create table if not exists public.bills (
   poster_name      text not null,                    -- first name only
   city             text not null,
   state            text not null,
-  biller           text not null,                    -- who gets paid, never the poster
+  biller           text not null,                    -- the company the bill is from
+  payout           text not null default 'biller'
+                   check (payout in ('biller','bank')), -- biller = we pay the company; bank = we pay the poster
   category         text not null check (category in ('utility','rent','medical','tuition','phone','car','other')),
   amount_cents     integer not null check (amount_cents > 0),
   remaining_cents  integer not null check (remaining_cents >= 0),
@@ -24,6 +26,8 @@ create table if not exists public.bills (
 );
 
 create index if not exists bills_open_idx on public.bills (status, verified, due_date);
+-- Existing databases: add the column without rebuilding the table.
+alter table public.bills add column if not exists payout text not null default 'biller';
 
 -- ---------- luvs (pledges / payments) ----------
 create table if not exists public.luvs (

@@ -9,6 +9,20 @@ function daysUntil(date: string | null): string | null {
   return `Due in ${diff} days`;
 }
 
+function PayoutBadge({ bill }: { bill: Bill }) {
+  const direct = bill.payout === "biller";
+  return (
+    <div
+      className={`mt-1 self-start inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
+        direct ? "bg-white text-emerald-700" : "bg-white/25 text-white"
+      }`}
+    >
+      <span aria-hidden>{direct ? "🏦" : "👤"}</span>
+      {direct ? `Paid straight to ${bill.biller}` : `Paid to ${bill.poster_name}'s bank`}
+    </div>
+  );
+}
+
 export default function BillCard({ bill }: { bill: Bill }) {
   const pct = Math.round(((bill.amount_cents - bill.remaining_cents) / bill.amount_cents) * 100);
   const due = daysUntil(bill.due_date);
@@ -28,8 +42,9 @@ export default function BillCard({ bill }: { bill: Bill }) {
         <div className="text-4xl font-extrabold tracking-tight">{formatMoney(bill.remaining_cents)}</div>
         <div className="text-sm opacity-90">
           {bill.remaining_cents < bill.amount_cents && <>of {formatMoney(bill.amount_cents)} · </>}
-          to <span className="font-semibold">{bill.biller}</span>
+          {bill.biller}
         </div>
+        <PayoutBadge bill={bill} />
       </div>
 
       <div className="p-5 flex flex-col gap-4 flex-1">

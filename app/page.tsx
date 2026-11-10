@@ -16,8 +16,8 @@ export default async function Home() {
           <span className="text-luv-600">Pay someone&apos;s light bill.</span>
         </h1>
         <p className="text-stone-600">
-          Real bills, verified. Your money goes straight to the utility, the hospital, the
-          school — never to a person. Pay all of it or chip in a little.
+          Real bills, verified. Most are paid straight to the utility, the hospital, the
+          school — and you can filter for those. Pay all of it or chip in a little.
         </p>
         <div className="flex gap-3 justify-center pt-2">
           <Link
@@ -45,7 +45,7 @@ export default async function Home() {
         <Step n={1} text="Someone posts a bill — the biller, the amount, a few sentences." />
         <Step n={2} text="We verify it's a real bill with a real balance." />
         <Step n={3} text="You swipe. Right to luv it, left to pass." />
-        <Step n={4} text="We pay the biller directly. They get a receipt, you get the warm fuzzies." />
+        <Step n={4} text="We pay the biller directly (the default), or the poster's bank if they chose that — it's labeled on every card." />
       </section>
     </div>
   );

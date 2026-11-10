@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStore } from "@/lib/store";
-import type { BillCategory, NewBillInput } from "@/lib/types";
+import type { BillCategory, NewBillInput, Payout } from "@/lib/types";
 
 const CATEGORIES: BillCategory[] = ["utility", "rent", "medical", "tuition", "phone", "car", "other"];
 
@@ -23,6 +23,7 @@ export async function POST(req: Request) {
   const biller = String(body.biller ?? "").trim();
   const story = String(body.story ?? "").trim();
   const category = body.category as BillCategory;
+  const payout: Payout = body.payout === "bank" ? "bank" : "biller";
   const amount_cents = Math.round(Number(body.amount_cents ?? (body.amount ?? 0) * 100));
   const due_date = body.due_date ? String(body.due_date) : null;
 
@@ -43,6 +44,7 @@ export async function POST(req: Request) {
     city,
     state,
     biller,
+    payout,
     category,
     amount_cents,
     due_date,

@@ -8,14 +8,34 @@ import Celebration from "./Celebration";
 import EmptyDeck from "./EmptyDeck";
 import { celebrationLine } from "@/lib/celebrate";
 import { recordMyLuv } from "@/lib/myLuvs";
-import { type Bill } from "@/lib/types";
+import { type Bill, type Payout } from "@/lib/types";
 
 const SWIPE_THRESHOLD = 110; // px
 const FLICK_VELOCITY = 600; // px/s
 const CELEBRATE_MS = 1800;
+const FILTER_KEY = "stl.payoutFilter.v1";
+
+type PayoutFilter = "all" | Payout;
 
 export default function SwipeDeck({ initialBills }: { initialBills: Bill[] }) {
+  const [filter, setFilter] = useState<PayoutFilter>("all");
   const [bills, setBills] = useState<Bill[]>(initialBills);
+
+  // Restore the giver's filter choice, then apply it.
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(FILTER_KEY) as PayoutFilter | null;
+      if (saved === "biller" || saved === "bank" || saved === "all") applyFilter(saved);
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const applyFilter = (f: PayoutFilter) => {
+    setFilter(f);
+    setPassed([]);
+    setBills(f === "all" ? initialBills : initialBills.filter((b) => b.payout === f));
+    try { localStorage.setItem(FILTER_KEY, f); } catch {}
+  };
   const [passed, setPassed] = useState<Bill[]>([]); // undo stack
   const [exitDir, setExitDir] = useState<1 | -1>(1);
   const [luvTarget, setLuvTarget] = useState<Bill | null>(null);
@@ -78,12 +98,32 @@ export default function SwipeDeck({ initialBills }: { initialBills: Bill[] }) {
     }, CELEBRATE_MS);
   };
 
+  const directCount = initialBills.filter((b) => b.payout === "biller").length;
+
+  const filterBar = (
+    <div className="flex items-center justify-center gap-2" role="radiogroup" aria-label="Where the money goes">
+      <FilterChip active={filter === "all"} onClick={() => applyFilter("all")}>All bills</FilterChip>
+      <FilterChip active={filter === "biller"} onClick={() => applyFilter("biller")}>
+        🏦 Paid to biller <span className="opacity-60">({directCount})</span>
+      </FilterChip>
+      <FilterChip active={filter === "bank"} onClick={() => applyFilter("bank")}>
+        👤 Paid to poster <span className="opacity-60">({initialBills.length - directCount})</span>
+      </FilterChip>
+    </div>
+  );
+
   if (!top) {
-    return <EmptyDeck onRestart={() => { setBills(initialBills); setPassed([]); }} />;
+    return (
+      <div className="flex flex-col gap-5">
+        {filterBar}
+        <EmptyDeck onRestart={() => applyFilter(filter)} />
+      </div>
+    );
   }
 
   return (
     <div className="flex flex-col gap-5">
+      {filterBar}
       <div className="relative h-[520px] no-touch-pan">
         {next && (
           <div className="absolute inset-0 scale-[0.96] translate-y-3 opacity-70 pointer-events-none">
@@ -183,6 +223,21 @@ function TopCard({
         PASS
       </motion.div>
     </motion.div>
+  );
+}
+
+function FilterChip({ children, active, onClick }: { children: React.ReactNode; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      role="radio"
+      aria-checked={active}
+      onClick={onClick}
+      className={`rounded-full px-3 py-1.5 text-xs font-semibold border-2 transition whitespace-nowrap ${
+        active ? "border-luv-600 bg-luv-50 text-luv-700" : "border-stone-200 text-stone-600 hover:border-luv-300"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 

@@ -53,7 +53,11 @@ export default async function PostDonePage({
           }
         />
         <Step n={3} done={false} title="People swipe" text="Swipers see your first name, city, biller, amount and story — nothing else." />
-        <Step n={4} done={false} title="We pay the biller" text="Luvs go straight to the biller. You get a receipt when the balance moves. Money never passes through you." />
+        {bill.payout === "biller" ? (
+          <Step n={4} done={false} title={`We pay ${bill.biller}`} text="Luvs go straight to the biller. You get a receipt when the balance moves. Money never passes through you." />
+        ) : (
+          <Step n={4} done={false} title="We pay you" text="Luvs go to your bank account after identity verification, and you pay the bill. Your card is labeled “Paid to poster” so swipers know." />
+        )}
       </ol>
 
       <div className="flex gap-3 justify-center">
